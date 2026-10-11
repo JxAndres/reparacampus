@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1>Bienvenido, {{ g.user.nombre }}</h1>
+<p>Rol: <strong>{{ g.user.rol }}</strong></p>
+<p>Las incidencias se agregarán en los siguientes cambios.</p>
+{% endblock %}
