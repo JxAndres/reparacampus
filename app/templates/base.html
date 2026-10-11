@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReparaCampus</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: .5rem; }
+    .error { background: #fde8e8; padding: .6rem; border-radius: 4px; }
+    label { display: block; margin-top: .8rem; }
+    input { padding: .4rem; width: 100%; max-width: 320px; }
+    button { margin-top: 1rem; padding: .5rem 1rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>ReparaCampus</strong>
+    {% if g.user %}
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <span>{{ g.user.nombre }} ({{ g.user.rol }})</span>
+        <button type="submit">Cerrar sesión</button>
+      </form>
+    {% endif %}
+  </header>
+  {% with mensajes = get_flashed_messages() %}
+    {% for m in mensajes %}<p class="error">{{ m }}</p>{% endfor %}
+  {% endwith %}
+  {% block contenido %}{% endblock %}
+</body>
+</html>
