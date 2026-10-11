@@ -1,0 +1,41 @@
+flowchart TB
+    subgraph Cliente["Navegador"]
+        UI["HTML + CSS + JavaScript<br/>Formularios, listas, tablero"]
+    end
+
+    subgraph Servidor["Aplicación Flask (monolito modular)"]
+        subgraph Rutas["Capa de rutas"]
+            AUTH["Login / logout<br/>Sesión del servidor"]
+            DEC["Decoradores de rol y dueño"]
+            RUT["Rutas de incidencias<br/>registrar, asignar, atender, validar, consultar"]
+            TPL["Plantillas Jinja<br/>escape automático"]
+        end
+        subgraph Negocio["Capa de lógica de negocio"]
+            SRV["Servicios por funcionalidad<br/>S01 a S05"]
+            PRI["calcular_prioridad<br/>función pura"]
+            VAL["Validaciones<br/>textos, estados, transiciones"]
+            CLK["Reloj inyectable<br/>UTC, regla de 48 h"]
+        end
+        subgraph Persistencia["Capa de persistencia"]
+            REP["Repositorios SQL<br/>transacción única"]
+            ESQ["Esquema SQL y seed<br/>5 cuentas ficticias, hash"]
+        end
+    end
+
+    DB[("SQLite<br/>usuarios, incidencias, asignaciones,<br/>soluciones, eventos")]
+    TST["pytest + cliente de pruebas Flask<br/>BD de prueba independiente"]
+
+    UI -- "HTTP" --> AUTH
+    UI -- "HTTP" --> RUT
+    AUTH --> DEC
+    RUT --> DEC
+    RUT --> TPL
+    RUT --> SRV
+    SRV --> PRI
+    SRV --> VAL
+    SRV --> CLK
+    SRV --> REP
+    REP --> DB
+    ESQ --> DB
+    TST -. "prueba" .-> RUT
+    TST -. "prueba" .-> SRV
