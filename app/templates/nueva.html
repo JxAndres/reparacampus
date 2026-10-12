@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1>Registrar incidencia</h1>
+
+{% if creada %}
+  <p class="error" style="background:#e6f4ea;">Incidencia registrada con el código <strong>{{ creada }}</strong>.</p>
+{% endif %}
+
+{% for e in errores %}
+  <p class="error">{{ e }}</p>
+{% endfor %}
+
+<form method="post" action="{{ url_for('incidencias.crear') }}">
+  <label>Ubicación
+    <select name="ubicacion" required>
+      <option value="">Seleccione…</option>
+      {% for u in ubicaciones %}
+        <option value="{{ u }}" {% if valores.get('ubicacion') == u %}selected{% endif %}>{{ u }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Categoría
+    <select name="categoria" required>
+      <option value="">Seleccione…</option>
+      {% for c in categorias %}
+        <option value="{{ c }}" {% if valores.get('categoria') == c %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Descripción (20 a 500 caracteres)
+    <textarea name="descripcion" rows="5" style="width:100%;" required>{{ valores.get('descripcion', '') }}</textarea>
+  </label>
+  <label>Impacto
+    <select name="impacto" required>
+      <option value="">Seleccione…</option>
+      <option value="BAJO" {% if valores.get('impacto') == 'BAJO' %}selected{% endif %}>BAJO</option>
+      <option value="ALTO" {% if valores.get('impacto') == 'ALTO' %}selected{% endif %}>ALTO</option>
+    </select>
+  </label>
+  <label>¿Hay riesgo para personas?
+    <select name="riesgo_personas" required>
+      <option value="">Seleccione…</option>
+      <option value="false" {% if valores.get('riesgo_personas') == 'false' %}selected{% endif %}>No</option>
+      <option value="true" {% if valores.get('riesgo_personas') == 'true' %}selected{% endif %}>Sí</option>
+    </select>
+  </label>
+  <button type="submit">Registrar</button>
+</form>
+{% endblock %}

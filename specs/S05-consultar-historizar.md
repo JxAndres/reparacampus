@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 0.1 (borrador) |
+| Versión | 0.2 (borrador) |
 | Autor | Sebastián |
 | Revisor | Antonio (pendiente) |
 | Fecha | 2026-10-11 |
@@ -20,10 +20,12 @@ Como **usuario del sistema** (solicitante, coordinador o técnico), quiero **con
 |---|---|---|---|---|
 | Listar | estado | texto | No | REGISTRADA, ASIGNADA, EN_ATENCION, PENDIENTE_VALIDACION, CERRADA |
 | Listar | prioridad | texto | No | CRITICA, ALTA, NORMAL |
-| Detalle | codigo (en la ruta) | texto | Sí | Código de una incidencia existente |
+| Detalle | incidencia_id (en la ruta) | entero | Sí | Id de una incidencia existente |
 | Tablero | (sin campos) | — | — | — |
 
 Si se envían ambos filtros, se aplican juntos. El cliente nunca envía identidad, rol ni fecha.
+
+El código INC-0001 es solo para mostrar en pantalla. Las rutas identifican la incidencia por su id entero (/incidencias/<int:incidencia_id>/...). Un id que no sea entero no coincide con la ruta (404).
 
 ## Precondiciones y permisos
 - Usuario autenticado. Rol e identidad salen de la sesión en el servidor.
@@ -39,6 +41,7 @@ Si se envían ambos filtros, se aplican juntos. El cliente nunca envía identida
 2. Aplica primero el alcance por rol y luego los filtros pedidos.
 3. La prioridad no se guarda: se calcula con `calcular_prioridad(riesgo, impacto)` (CRITICA si hay riesgo; ALTA si no hay riesgo e impacto ALTO; NORMAL si no hay riesgo e impacto BAJO). El filtro por prioridad usa ese cálculo.
 4. Un filtro con un valor fuera de la lista se rechaza.
+5. En el detalle, si el id no existe responde 404; si existe pero no es del usuario o no es su asignación, responde 403.
 
 **Historial**
 1. Cada creación y cada transición exitosa (S01 a S04) guarda un evento con: autor, fecha UTC del servidor, estado anterior, estado nuevo y acción.
@@ -55,7 +58,7 @@ Si se envían ambos filtros, se aplican juntos. El cliente nunca envía identida
 5. Una incidencia reabierta deja de contar como CERRADA, y su cierre anterior se conserva en el historial.
 
 ## Salidas y cambios persistidos
-- Listado: incidencias visibles para el rol, con código, ubicación, categoría, estado y prioridad calculada.
+- Listado: incidencias visibles para el rol, con código (para mostrar), ubicación, categoría, estado y prioridad calculada.
 - Detalle: datos de la incidencia y su historial completo.
 - Tablero: los cuatro indicadores anteriores.
 - Las consultas no modifican datos.
@@ -63,7 +66,7 @@ Si se envían ambos filtros, se aplican juntos. El cliente nunca envía identida
 ## Errores y efectos que deben evitarse
 - Sin sesión: se redirige al login.
 - Rol sin permiso (por ejemplo, un solicitante o técnico pide el tablero): 403.
-- Incidencia ajena o sin permiso de lectura: 403 (o 404 si se decide ocultar su existencia; la decisión se registra al revisar).
+- Incidencia existente pero ajena, o que no es su asignación: 403.
 - Incidencia inexistente: 404.
 - Filtro inválido: 400/422.
 - Ninguna ruta permite editar o borrar eventos.
@@ -78,7 +81,7 @@ Si se envían ambos filtros, se aplican juntos. El cliente nunca envía identida
 - **AC-S05-05 (filtro por prioridad):** Dado incidencias con riesgo, sin riesgo e impacto ALTO, y sin riesgo e impacto BAJO, cuando el coordinador filtra por prioridad CRITICA, entonces ve solo las que tienen riesgo para personas.
 - **AC-S05-06 (filtros combinados y permisos):** Dado un solicitante con incidencias en varios estados y prioridades, cuando filtra por estado y prioridad a la vez, entonces ve solo las propias que cumplen ambos filtros.
 - **AC-S05-07 (filtro inválido):** Dado un usuario autenticado, cuando filtra por estado "ABIERTA" o prioridad "URGENTE", entonces se rechaza con 400/422 y no se devuelve un listado.
-- **AC-S05-08 (acceso ajeno al detalle):** Dado una incidencia del solicitante A, cuando el solicitante B o un técnico no asignado pide su detalle o su historial, entonces se rechaza y no se muestra ningún dato.
+- **AC-S05-08 (acceso ajeno al detalle):** Dado una incidencia existente del solicitante A, cuando el solicitante B o un técnico no asignado pide su detalle o su historial, entonces se rechaza con 403 y no se muestra ningún dato.
 - **AC-S05-09 (historial completo):** Dado una incidencia que pasó por registro, asignación, atención, solución, rechazo, nueva solución, cierre y reapertura, cuando su dueño consulta el historial, entonces ve todos los eventos en orden, con autor, fecha, estados, acción, soluciones, motivos, cierres y reaperturas.
 - **AC-S05-10 (inmutabilidad):** Dado un evento existente, cuando se intenta editarlo o borrarlo por cualquier ruta, entonces no existe esa operación, y el evento permanece igual.
 - **AC-S05-11 (operación fallida sin evento):** Dado una operación rechazada (por permisos, estado, datos o plazo), cuando se consulta el historial, entonces no aparece ningún evento nuevo y el estado no cambió.
@@ -86,7 +89,7 @@ Si se envían ambos filtros, se aplican juntos. El cliente nunca envía identida
 - **AC-S05-13 (tablero vacío):** Dado cero incidencias, cuando el coordinador abre el tablero, entonces el porcentaje de cierre es `0,0 %` y las cantidades son cero, sin error de división.
 - **AC-S05-14 (reapertura y porcentaje):** Dado cuatro incidencias con una CERRADA (25,0 %), cuando su dueño la reabre, entonces el porcentaje baja a `0,0 %` y el cierre anterior sigue en el historial.
 - **AC-S05-15 (tablero solo coordinador):** Dado un solicitante o un técnico autenticado, cuando intenta abrir el tablero, entonces se rechaza con 403.
-- **AC-S05-16 (sin sesión):** Dado un visitante sin sesión, cuando intenta listar, ver un detalle o abrir el tablero, entonces se redirige al login.
+- **AC-S05-16 (inexistente y sin sesión):** Dado un id de incidencia inexistente, cuando un usuario autenticado pide su detalle, entonces responde 404; y dado un visitante sin sesión, cuando intenta listar, ver un detalle o abrir el tablero, entonces se redirige al login. En ambos casos sin efectos.
 - **AC-S05-17 (seguridad de texto):** Dado una incidencia con `<script>alert(1)</script>` en su descripción, solución o motivo, cuando se muestra en el listado, detalle o historial, entonces aparece como texto escapado sin ejecutarse.
 - **AC-S05-18 (persistencia):** Dado incidencias y eventos guardados, cuando el servidor se reinicia, entonces el listado, el historial y el tablero muestran los mismos datos.
 
@@ -94,7 +97,7 @@ Si se envían ambos filtros, se aplican juntos. El cliente nunca envía identida
 | Tarea | Cubre |
 |---|---|
 | T-S05-1: ruta GET de listado con alcance por rol y filtros | AC-01 a 07, 16 |
-| T-S05-2: ruta GET de detalle con historial y control de acceso | AC-08, 09, 16 |
+| T-S05-2: ruta GET de detalle por `incidencia_id` con historial y control de acceso (404 inexistente, 403 ajena) | AC-08, 09, 16 |
 | T-S05-3: tabla `eventos` de solo inserción, sin rutas de edición ni borrado | AC-09, 10, 11 |
 | T-S05-4: función pura `calcular_prioridad(riesgo, impacto)` usada en listado y filtros | AC-05, 06 |
 | T-S05-5: ruta GET del tablero (solo coordinador) con consultas agregadas | AC-12, 13, 14, 15 |

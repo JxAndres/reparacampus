@@ -2,7 +2,7 @@ import os
 
 from flask import Flask
 
-from app import auth
+from app import auth, incidencias
 
 
 def create_app(db_path=None):
@@ -12,4 +12,5 @@ def create_app(db_path=None):
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.register_blueprint(auth.bp)
+    app.register_blueprint(incidencias.bp)
     return app
