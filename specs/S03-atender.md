@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 0.1 (borrador) |
+| Versión | 0.2 (borrador) |
 | Autor | Sebastián |
 | Revisor | Antonio (pendiente) |
 | Fecha | 2026-10-11 |
@@ -18,11 +18,13 @@ Como **técnico asignado**, quiero **iniciar la atención de una incidencia y re
 ## Entradas
 | Operación | Campo | Tipo | Obligatorio | Límites / valores permitidos |
 |---|---|---|---|---|
-| Iniciar atención | codigo (en la ruta) | texto | Sí | Código de una incidencia existente |
-| Registrar solución | codigo (en la ruta) | texto | Sí | Código de una incidencia existente |
+| Iniciar atención | incidencia_id (en la ruta) | entero | Sí | Id de una incidencia existente |
+| Registrar solución | incidencia_id (en la ruta) | entero | Sí | Id de una incidencia existente |
 | Registrar solución | solucion | texto | Sí | 20 a 800 caracteres, después de quitar espacios externos |
 
 El cliente nunca envía autor, estado, fecha ni técnico.
+
+El código INC-0001 es solo para mostrar en pantalla. Las rutas identifican la incidencia por su id entero (/incidencias/<int:incidencia_id>/...). Un id que no sea entero no coincide con la ruta (404).
 
 ## Precondiciones y permisos
 - Usuario autenticado con rol TECNICO. El rol y la identidad salen de la sesión en el servidor.
@@ -68,22 +70,11 @@ El cliente nunca envía autor, estado, fecha ni técnico.
 - **AC-S03-07 (límite inferior):** Dado una incidencia EN_ATENCION asignada a T01, cuando T01 envía una solución de 19 caracteres, entonces se rechaza; con 20 caracteres, se acepta.
 - **AC-S03-08 (límite superior):** Dado una incidencia EN_ATENCION asignada a T01, cuando T01 envía una solución de 800 caracteres se acepta, y con 801 se rechaza.
 - **AC-S03-09 (espacios externos):** Dado una incidencia EN_ATENCION asignada a T01, cuando T01 envía una solución de 19 caracteres útiles más espacios al inicio y al final, entonces se rechaza porque el límite se aplica tras retirar espacios.
-- **AC-S03-10 (incidencia inexistente y sin sesión):** Dado un código inexistente, cuando un técnico autenticado intenta operar, entonces responde 404; y dado un visitante sin sesión, cuando intenta operar, entonces se redirige al login. En ambos casos sin efectos.
+- **AC-S03-10 (incidencia inexistente y sin sesión):** Dado un id de incidencia inexistente, cuando un técnico autenticado intenta operar, entonces responde 404; y dado un visitante sin sesión, cuando intenta operar, entonces se redirige al login. En ambos casos sin efectos.
 - **AC-S03-11 (seguridad de texto):** Dado una incidencia EN_ATENCION asignada a T01, cuando T01 registra una solución con `<script>alert(1)</script>` de 20 o más caracteres, entonces se guarda como texto y se muestra escapada sin ejecutarse.
 - **AC-S03-12 (atomicidad):** Dado un fallo simulado al guardar el evento, cuando T01 registra una solución, entonces no queda estado cambiado, ni solución guardada, ni evento parcial.
 
 ## Diseño y tareas vinculadas
 | Tarea | Cubre |
 |---|---|
-| T-S03-1: tabla `soluciones` (varias por incidencia) en el esquema SQL | AC-02, 12 |
-| T-S03-2: ruta POST de iniciar atención con control de técnico asignado y estado | AC-01, 03, 04, 06, 10 |
-| T-S03-3: ruta POST de registrar solución con validación de largo | AC-02, 05, 07, 08, 09 |
-| T-S03-4: decorador de rol, sesión y verificación del técnico asignado | AC-03, 04, 10 |
-| T-S03-5: plantilla Jinja con escape automático | AC-11 |
-| T-S03-6: transacción única estado + solución + evento | AC-12 |
-
-## Pruebas y resultados esperados
-Se automatizan en `tests/`. Resultado esperado: todos los AC cumplen. Se completa al ejecutar; si algo no se ejecuta, se declara pendiente.
-
-## Decisión de revisión / versión aprobada
-**Pendiente.** La revisión por otra persona no se ha realizado. No se registra como aprobada.
+| T-S03-1: tabla `soluciones` (varias
