@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 0.1 (borrador) |
+| Versión | 0.2 (borrador) |
 | Autor | Sebastián |
 | Revisor | Antonio (pendiente) |
 | Fecha | 2026-10-11 |
@@ -18,13 +18,15 @@ Como **solicitante dueño de una incidencia**, quiero **confirmar, rechazar o re
 ## Entradas
 | Operación | Campo | Tipo | Obligatorio | Límites / valores permitidos |
 |---|---|---|---|---|
-| Confirmar | codigo (en la ruta) | texto | Sí | Código de una incidencia existente |
-| Rechazar | codigo (en la ruta) | texto | Sí | Código de una incidencia existente |
+| Confirmar | incidencia_id (en la ruta) | entero | Sí | Id de una incidencia existente |
+| Rechazar | incidencia_id (en la ruta) | entero | Sí | Id de una incidencia existente |
 | Rechazar | motivo | texto | Sí | 10 a 300 caracteres, después de quitar espacios externos |
-| Reabrir | codigo (en la ruta) | texto | Sí | Código de una incidencia existente |
+| Reabrir | incidencia_id (en la ruta) | entero | Sí | Id de una incidencia existente |
 | Reabrir | motivo | texto | Sí | 10 a 300 caracteres, después de quitar espacios externos |
 
 El cliente nunca envía autor, estado, fecha ni técnico. La hora la obtiene el servidor.
+
+El código INC-0001 es solo para mostrar en pantalla. Las rutas identifican la incidencia por su id entero (/incidencias/<int:incidencia_id>/...). Un id que no sea entero no coincide con la ruta (404).
 
 ## Precondiciones y permisos
 - Usuario autenticado con rol SOLICITANTE y que sea el **dueño** (autor) de la incidencia. Rol e identidad salen de la sesión en el servidor.
@@ -86,7 +88,7 @@ El cliente nunca envía autor, estado, fecha ni técnico. La hora la obtiene el 
 - **AC-S04-13 (conservación del historial):** Dado un reporte que pasó por solución, rechazo, nueva solución, cierre y reapertura, cuando se consulta su historial, entonces conserva todas las soluciones, todos los cierres, los motivos y los eventos, sin edición ni borrado, y con el mismo técnico.
 - **AC-S04-14 (plazo desde el último cierre):** Dado un reporte cerrado, reabierto y cerrado de nuevo, cuando el solicitante intenta reabrirlo, entonces el plazo de 48 horas se cuenta desde el último cierre y no desde el primero.
 - **AC-S04-15 (hora del servidor):** Dado un solicitante que envía un campo de fecha u hora en la petición, cuando confirma, rechaza o reabre, entonces el servidor ignora ese dato y usa su propia hora UTC.
-- **AC-S04-16 (inexistente y sin sesión):** Dado un código inexistente, cuando un solicitante autenticado opera, entonces responde 404; y dado un visitante sin sesión, cuando intenta operar, entonces se redirige al login. En ambos casos sin efectos.
+- **AC-S04-16 (inexistente y sin sesión):** Dado un id de incidencia inexistente, cuando un solicitante autenticado opera, entonces responde 404; y dado un visitante sin sesión, cuando intenta operar, entonces se redirige al login. En ambos casos sin efectos.
 - **AC-S04-17 (seguridad de texto):** Dado un reporte propio PENDIENTE_VALIDACION, cuando el solicitante rechaza con un motivo `<script>alert(1)</script>`, entonces se guarda como texto y se muestra escapado sin ejecutarse.
 - **AC-S04-18 (atomicidad):** Dado un fallo simulado al guardar el evento, cuando el solicitante confirma, rechaza o reabre, entonces no queda estado cambiado ni evento parcial.
 
@@ -106,4 +108,4 @@ El cliente nunca envía autor, estado, fecha ni técnico. La hora la obtiene el 
 Se automatizan en `tests/`, con tres pruebas de integración: flujo de cierre, rechazo con nueva solución, y cierre → reapertura → nueva solución → nuevo cierre. El límite de 48 horas se prueba con reloj controlado. Resultado esperado: todos los AC cumplen. Se completa al ejecutar; si algo no se ejecuta, se declara pendiente.
 
 ## Decisión de revisión / versión aprobada
-**Pendiente.** La revisión por otra persona no se ha realizado. No se registra como aprobada. 
+**Pendiente.** La revisión por otra persona no se ha realizado. No se registra como aprobada.
