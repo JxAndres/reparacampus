@@ -4,5 +4,7 @@
 <p>Rol: <strong>{{ g.user.rol }}</strong></p>
 {% if g.user.rol == 'SOLICITANTE' %}
   <p><a href="{{ url_for('incidencias.nueva') }}">Registrar incidencia</a></p>
+{% elif g.user.rol == 'COORDINADOR' %}
+  <p><a href="{{ url_for('asignaciones.pendientes') }}">Incidencias por asignar</a></p>
 {% endif %}
 {% endblock %}
