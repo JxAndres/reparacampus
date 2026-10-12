@@ -1,48 +1,47 @@
 erDiagram
     USUARIOS {
         int id PK
-        string nombre
         string username UK
+        string nombre
         string password_hash
         string rol "SOLICITANTE | COORDINADOR | TECNICO"
-        bool activo
+        int activo "0 | 1"
     }
     INCIDENCIAS {
         int id PK
-        string codigo UK "INC-0001"
+        string codigo UK "INC-0001, solo para mostrar"
         string ubicacion
         string categoria
         string descripcion "20-500"
         string impacto "BAJO | ALTO"
-        bool riesgo_personas
+        int riesgo_personas "0 | 1"
         string estado
         int autor_id FK
-        datetime fecha_creacion "UTC"
+        string creada_en "UTC"
     }
     ASIGNACIONES {
         int id PK
         int incidencia_id FK, UK
         int tecnico_id FK
         int coordinador_id FK
-        datetime fecha "UTC"
+        string asignada_en "UTC"
     }
     SOLUCIONES {
         int id PK
         int incidencia_id FK
         int tecnico_id FK
         string texto "20-800"
-        datetime fecha "UTC"
+        string registrada_en "UTC"
     }
     EVENTOS {
         int id PK
         int incidencia_id FK
-        string accion "CREAR, ASIGNAR, INICIAR, SOLUCIONAR, CONFIRMAR, RECHAZAR, REABRIR"
+        string accion "CREAR, ASIGNAR, INICIAR, PROPONER_SOLUCION, CONFIRMAR, RECHAZAR, REABRIR"
+        int autor_id FK
         string estado_anterior
         string estado_nuevo
-        int autor_id FK
-        datetime fecha "UTC"
-        string motivo "10-300, solo rechazo y reapertura"
-        int solucion_id FK "opcional"
+        string detalle "solución o motivo"
+        string creado_en "UTC"
     }
     USUARIOS ||--o{ INCIDENCIAS : "reporta"
     INCIDENCIAS ||--o| ASIGNACIONES : "tiene"

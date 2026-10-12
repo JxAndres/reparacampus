@@ -1,0 +1,56 @@
+flowchart TB
+    subgraph Cliente["Navegador"]
+        UI["HTML + CSS + JavaScript<br/>formularios y listas"]
+    end
+
+    subgraph App["Aplicación Flask (monolito modular, paquete app/)"]
+        FAB["__init__.py<br/>create_app registra los blueprints"]
+        AUTH["auth.py<br/>login, logout, sesión<br/>login_required y rol_requerido"]
+        subgraph Modulos["Módulos por funcionalidad (cada uno junta ruta, regla y SQL)"]
+            INC["incidencias.py<br/>S01 registrar"]
+            ASI["asignaciones.py<br/>S02 asignar"]
+            ATE["atencion.py<br/>S03 atender<br/>(rama feature/s03-atender)"]
+            VAL["S04 validar<br/>(pendiente)"]
+            CON["S05 consultar, historial y tablero<br/>(pendiente)"]
+        end
+        subgraph Comun["Piezas compartidas"]
+            PRI["prioridad.py<br/>calcular_prioridad (función pura)"]
+            CLK["reloj.py<br/>ahora() en UTC, reemplazable"]
+            DBM["db.py<br/>abre la conexión SQLite"]
+        end
+        TPL["templates/ Jinja<br/>escape automático"]
+    end
+
+    subgraph Datos["Persistencia"]
+        SCH["schema.sql<br/>tablas, CHECK y triggers del historial"]
+        SEED["seed.py<br/>5 cuentas ficticias con hash"]
+        DB[("SQLite<br/>data/reparacampus.db")]
+    end
+
+    TST["tests/ con pytest<br/>BD independiente (pendiente)"]
+
+    UI -- "HTTP" --> FAB
+    FAB --> AUTH
+    FAB --> INC
+    FAB --> ASI
+    FAB --> ATE
+    INC --> AUTH
+    ASI --> AUTH
+    ATE --> AUTH
+    INC --> TPL
+    ASI --> TPL
+    ASI --> PRI
+    INC --> CLK
+    ASI --> CLK
+    ATE --> CLK
+    AUTH --> DBM
+    INC --> DBM
+    ASI --> DBM
+    ATE --> DBM
+    DBM --> DB
+    SCH --> DB
+    SEED --> DB
+    TST -. "prueba" .-> Modulos
+
+    classDef pendiente stroke-dasharray: 5 5
+    class VAL,CON,TST pendiente
