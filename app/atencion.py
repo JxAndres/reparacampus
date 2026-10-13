@@ -3,7 +3,7 @@
 Iniciar atención:   ASIGNADA     -> EN_ATENCION
 Registrar solución: EN_ATENCION  -> PENDIENTE_VALIDACION
 """
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, g, render_template, request
 
 from app import reloj
 from app.auth import obtener_db, rol_requerido
@@ -99,17 +99,47 @@ def registrar_solucion(conn, incidencia_id, tecnico_id, texto, momento):
     return "PENDIENTE_VALIDACION"
 
 
+def listar_asignadas(conn, tecnico_id):
+    """Solo las incidencias asignadas al técnico de la sesión."""
+    return conn.execute(
+        "SELECT i.id, i.codigo, i.ubicacion, i.categoria, i.descripcion, i.estado "
+        "FROM incidencias i JOIN asignaciones a ON a.incidencia_id = i.id "
+        "WHERE a.tecnico_id = ? ORDER BY i.id",
+        (tecnico_id,),
+    ).fetchall()
+
+
+def _pagina(conn, estado=200, errores=None, ok=None):
+    return render_template(
+        "atencion.html",
+        asignadas=listar_asignadas(conn, g.user["id"]),
+        errores=errores or [],
+        ok=ok,
+    ), estado
+
+
+@bp.route("/atencion")
+@rol_requerido("TECNICO")
+def mis_asignaciones():
+    conn = obtener_db()
+    try:
+        return _pagina(conn)
+    finally:
+        conn.close()
+
+
 @bp.route("/incidencias/<int:incidencia_id>/iniciar", methods=["POST"])
 @rol_requerido("TECNICO")
 def iniciar(incidencia_id):
     conn = obtener_db()
     try:
-        estado = iniciar_atencion(conn, incidencia_id, g.user["id"], reloj.ahora())
-    except ErrorAtencion as e:
-        return jsonify(error=e.mensaje), e.codigo
+        try:
+            iniciar_atencion(conn, incidencia_id, g.user["id"], reloj.ahora())
+        except ErrorAtencion as e:
+            return _pagina(conn, e.codigo, errores=[e.mensaje])
+        return _pagina(conn, ok="Atención iniciada correctamente.")
     finally:
         conn.close()
-    return jsonify(estado=estado)
 
 
 @bp.route("/incidencias/<int:incidencia_id>/solucion", methods=["POST"])
@@ -117,10 +147,11 @@ def iniciar(incidencia_id):
 def solucion(incidencia_id):
     conn = obtener_db()
     try:
-        estado = registrar_solucion(conn, incidencia_id, g.user["id"],
-                                    request.form.get("solucion"), reloj.ahora())
-    except ErrorAtencion as e:
-        return jsonify(error=e.mensaje), e.codigo
+        try:
+            registrar_solucion(conn, incidencia_id, g.user["id"],
+                               request.form.get("solucion"), reloj.ahora())
+        except ErrorAtencion as e:
+            return _pagina(conn, e.codigo, errores=[e.mensaje])
+        return _pagina(conn, ok="Solución registrada correctamente.")
     finally:
         conn.close()
-    return jsonify(estado=estado)
