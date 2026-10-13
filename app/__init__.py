@@ -2,7 +2,7 @@ import os
 
 from flask import Flask
 
-from app import atencion, auth, incidencias
+from app import asignaciones, atencion, auth, incidencias
 
 
 def create_app(db_path=None):
@@ -13,5 +13,6 @@ def create_app(db_path=None):
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.register_blueprint(auth.bp)
     app.register_blueprint(incidencias.bp)
+    app.register_blueprint(asignaciones.bp)
     app.register_blueprint(atencion.bp)
-    return app
+    return app 
