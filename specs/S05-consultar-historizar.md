@@ -2,10 +2,10 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 0.2 (borrador) |
+| Versión | 0.4 (borrador) |
 | Autor | Sebastián |
-| Revisor | Antonio (pendiente) |
-| Fecha | 2026-10-11 |
+| Revisor | Antonio (dejó revisión escrita con observaciones en el PR #8; no consta aprobación; nueva revisión de la v0.4 pendiente) |
+| Fecha | 2026-10-12 |
 | Requisito asociado | RF05 |
 
 ## Historia
@@ -36,6 +36,14 @@ El código INC-0001 es solo para mostrar en pantalla. Las rutas identifican la i
 - El **tablero** es exclusivo del coordinador.
 
 ## Reglas y proceso
+**Orden de validaciones**
+1. Sesión: sin sesión se redirige al login, sin importar la ruta ni el id pedido.
+2. Rol: en el tablero, un rol distinto del coordinador recibe 403.
+3. Existencia: en el detalle, un id inexistente recibe 404.
+4. Permiso de lectura: en el detalle, un id existente que no es del usuario o no es su asignación recibe 403.
+5. Filtros: en el listado, un filtro con valor fuera de la lista recibe 400/422.
+Cada paso se evalúa solo si el anterior se superó, y un rechazo no genera efectos ni eventos.
+
 **Listado y detalle**
 1. El servidor verifica sesión y obtiene el rol.
 2. Aplica primero el alcance por rol y luego los filtros pedidos.
@@ -44,18 +52,19 @@ El código INC-0001 es solo para mostrar en pantalla. Las rutas identifican la i
 5. En el detalle, si el id no existe responde 404; si existe pero no es del usuario o no es su asignación, responde 403.
 
 **Historial**
-1. Cada creación y cada transición exitosa (S01 a S04) guarda un evento con: autor, fecha UTC del servidor, estado anterior, estado nuevo y acción.
-2. Los eventos de solución, rechazo, cierre y reapertura incluyen además la solución o el motivo correspondiente.
-3. El historial se muestra en orden cronológico e incluye soluciones, motivos, cierres y reaperturas.
-4. La tabla de eventos solo admite inserciones. No existen rutas para editar ni borrar eventos.
+1. Cada creación y cada transición exitosa (S01 a S04) guarda un evento con: autor, fecha UTC del servidor, estado anterior, estado nuevo y acción. Las acciones permitidas son CREAR, ASIGNAR, INICIAR, PROPONER_SOLUCION, CONFIRMAR, RECHAZAR y REABRIR.
+2. Las soluciones se guardan en la tabla `soluciones` y el historial las muestra junto a su evento PROPONER_SOLUCION. Los motivos de rechazo y de reapertura se guardan en `eventos.detalle`. Los cierres quedan registrados con sus eventos CONFIRMAR.
+3. El historial se muestra en orden cronológico: por fecha ascendente y, si dos eventos tienen la misma fecha, por id del evento ascendente. Incluye soluciones, motivos, cierres y reaperturas.
+4. La tabla de eventos solo admite inserciones: no existen rutas para editar ni borrar eventos, y la base de datos lo refuerza con triggers contra UPDATE y DELETE.
 5. Una operación rechazada no genera evento.
 
 **Tablero del coordinador**
 1. Cantidad de incidencias por estado.
 2. Cantidad de incidencias por prioridad.
 3. Incidencias CRITICA que no están CERRADAS.
-4. Porcentaje de cierre = incidencias en estado CERRADA / total de incidencias × 100, con un decimal. Con cero incidencias muestra `0,0 %`.
-5. Una incidencia reabierta deja de contar como CERRADA, y su cierre anterior se conserva en el historial.
+4. Porcentaje de cierre = incidencias en estado CERRADA / total de incidencias × 100, con un decimal y coma decimal (por ejemplo `25,0 %`). Con cero incidencias muestra `0,0 %`.
+5. Redondeo: mitad hacia arriba (half-up), calculado con `Decimal` y `ROUND_HALF_UP`, no con `round()` de Python, que redondea al par más cercano. Ejemplo: 1 de 16 es 6,25 y se muestra `6,3 %`.
+6. Una incidencia reabierta deja de contar como CERRADA, y su cierre anterior se conserva en el historial.
 
 ## Salidas y cambios persistidos
 - Listado: incidencias visibles para el rol, con código (para mostrar), ubicación, categoría, estado y prioridad calculada.
@@ -82,8 +91,8 @@ El código INC-0001 es solo para mostrar en pantalla. Las rutas identifican la i
 - **AC-S05-06 (filtros combinados y permisos):** Dado un solicitante con incidencias en varios estados y prioridades, cuando filtra por estado y prioridad a la vez, entonces ve solo las propias que cumplen ambos filtros.
 - **AC-S05-07 (filtro inválido):** Dado un usuario autenticado, cuando filtra por estado "ABIERTA" o prioridad "URGENTE", entonces se rechaza con 400/422 y no se devuelve un listado.
 - **AC-S05-08 (acceso ajeno al detalle):** Dado una incidencia existente del solicitante A, cuando el solicitante B o un técnico no asignado pide su detalle o su historial, entonces se rechaza con 403 y no se muestra ningún dato.
-- **AC-S05-09 (historial completo):** Dado una incidencia que pasó por registro, asignación, atención, solución, rechazo, nueva solución, cierre y reapertura, cuando su dueño consulta el historial, entonces ve todos los eventos en orden, con autor, fecha, estados, acción, soluciones, motivos, cierres y reaperturas.
-- **AC-S05-10 (inmutabilidad):** Dado un evento existente, cuando se intenta editarlo o borrarlo por cualquier ruta, entonces no existe esa operación, y el evento permanece igual.
+- **AC-S05-09 (historial completo):** Dado una incidencia que pasó por registro, asignación, atención, solución, rechazo, nueva solución, cierre y reapertura, cuando su dueño consulta el historial, entonces ve todos los eventos en orden (CREAR, ASIGNAR, INICIAR, PROPONER_SOLUCION, RECHAZAR, PROPONER_SOLUCION, CONFIRMAR, REABRIR), con autor, fecha, estados, acción, soluciones, motivos, cierres y reaperturas.
+- **AC-S05-10 (inmutabilidad):** Dado un evento existente, cuando se intenta editarlo o borrarlo por cualquier ruta o con una sentencia UPDATE o DELETE sobre la base de datos, entonces la operación no existe o es rechazada, y el evento permanece igual.
 - **AC-S05-11 (operación fallida sin evento):** Dado una operación rechazada (por permisos, estado, datos o plazo), cuando se consulta el historial, entonces no aparece ningún evento nuevo y el estado no cambió.
 - **AC-S05-12 (tablero con datos):** Dado cuatro incidencias de las cuales una está CERRADA, cuando el coordinador abre el tablero, entonces muestra cantidades correctas por estado y por prioridad, las CRITICA no cerradas, y un porcentaje de cierre de `25,0 %`.
 - **AC-S05-13 (tablero vacío):** Dado cero incidencias, cuando el coordinador abre el tablero, entonces el porcentaje de cierre es `0,0 %` y las cantidades son cero, sin error de división.
@@ -92,21 +101,25 @@ El código INC-0001 es solo para mostrar en pantalla. Las rutas identifican la i
 - **AC-S05-16 (inexistente y sin sesión):** Dado un id de incidencia inexistente, cuando un usuario autenticado pide su detalle, entonces responde 404; y dado un visitante sin sesión, cuando intenta listar, ver un detalle o abrir el tablero, entonces se redirige al login. En ambos casos sin efectos.
 - **AC-S05-17 (seguridad de texto):** Dado una incidencia con `<script>alert(1)</script>` en su descripción, solución o motivo, cuando se muestra en el listado, detalle o historial, entonces aparece como texto escapado sin ejecutarse.
 - **AC-S05-18 (persistencia):** Dado incidencias y eventos guardados, cuando el servidor se reinicia, entonces el listado, el historial y el tablero muestran los mismos datos.
+- **AC-S05-19 (redondeo del porcentaje):** Dado 16 incidencias de las cuales 1 está CERRADA, cuando el coordinador abre el tablero, entonces el porcentaje de cierre es `6,3 %` (6,25 con redondeo half-up); y dado 3 incidencias de las cuales 1 está CERRADA, entonces es `33,3 %`.
+- **AC-S05-20 (desempate del historial):** Dado dos eventos de una misma incidencia con la misma fecha UTC, cuando se consulta el historial, entonces aparecen ordenados por fecha y, en empate, por id del evento ascendente, siempre en el mismo orden.
+- **AC-S05-21 (orden de validaciones):** Dado un visitante sin sesión que pide el detalle de cualquier id, entonces se redirige al login; dado un solicitante que pide el detalle de un id inexistente, entonces responde 404; y dado un solicitante que pide el detalle de un id existente ajeno, entonces responde 403. En los tres casos sin efectos.
 
 ## Diseño y tareas vinculadas
 | Tarea | Cubre |
 |---|---|
 | T-S05-1: ruta GET de listado con alcance por rol y filtros | AC-01 a 07, 16 |
-| T-S05-2: ruta GET de detalle por `incidencia_id` con historial y control de acceso (404 inexistente, 403 ajena) | AC-08, 09, 16 |
-| T-S05-3: tabla `eventos` de solo inserción, sin rutas de edición ni borrado | AC-09, 10, 11 |
+| T-S05-2: ruta GET de detalle por `incidencia_id` con historial y control de acceso (404 inexistente, 403 ajena) | AC-08, 09, 16, 21 |
+| T-S05-3: tabla `eventos` de solo inserción (sin rutas de edición ni borrado, con triggers contra UPDATE y DELETE); historial ordenado por fecha e id | AC-09, 10, 11, 20 |
 | T-S05-4: función pura `calcular_prioridad(riesgo, impacto)` usada en listado y filtros | AC-05, 06 |
 | T-S05-5: ruta GET del tablero (solo coordinador) con consultas agregadas | AC-12, 13, 14, 15 |
-| T-S05-6: cálculo del porcentaje de cierre con un decimal y caso de cero registros | AC-12, 13, 14 |
+| T-S05-6: cálculo del porcentaje de cierre con `Decimal` y `ROUND_HALF_UP`, un decimal, coma decimal y caso de cero registros | AC-12, 13, 14, 19 |
 | T-S05-7: plantillas Jinja con escape automático | AC-17 |
 | T-S05-8: persistencia en SQLite (archivo de base de datos) | AC-18 |
+| T-S05-9: orden de validaciones (sesión, rol, existencia, permiso de lectura, filtros) | AC-15, 16, 21 |
 
 ## Pruebas y resultados esperados
-Se automatizan en `tests/`: alcance por rol, filtros, historial tras flujo completo, inmutabilidad, tablero vacío (0,0 %), tablero con uno cerrado de cuatro (25,0 %), reapertura que reduce el porcentaje y persistencia tras reinicio. Resultado esperado: todos los AC cumplen. Se completa al ejecutar; si algo no se ejecuta, se declara pendiente.
+Se automatizan en `tests/`: alcance por rol, filtros, historial tras flujo completo, inmutabilidad, tablero vacío (0,0 %), tablero con uno cerrado de cuatro (25,0 %), caso de redondeo (1 de 16 = 6,3 %), desempate por id, orden de validaciones, reapertura que reduce el porcentaje y persistencia tras reinicio. Resultado esperado: todos los AC cumplen. Se completa al ejecutar; si algo no se ejecuta, se declara pendiente.
 
 ## Decisión de revisión / versión aprobada
-**Pendiente.** La revisión por otra persona no se ha realizado. No se registra como aprobada.
+**Pendiente.** Antonio dejó una revisión escrita con observaciones en el PR #8, atendidas en esta versión (v0.4); no consta una aprobación. La nueva revisión por otra persona no se ha realizado. No se registra como aprobada.
