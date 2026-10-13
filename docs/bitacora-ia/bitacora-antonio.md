@@ -9,7 +9,7 @@
 | Herramienta / modelo | Claude, en claude.ai. Modelo configurado en la sesión: Sonnet 5.5 (el modelo efectivo pudo variar) |
 | Historia y SPEC / versión | RF01 a RF05, Parte 5 (Diseño). Basado en S01 y S02 v0.1; revisión posterior de S03, S04 y S05 v0.2 |
 | Archivos | `docs/diseno/`: `1_estados`, `2_modelo_datos`, `3_secuencia_rechazo` y `4_componentes` (`.mmd` y `.png`) y `5_decision_tecnologica.md` |
-| Commit / PR | `1e78223` (primer borrador), PR #9 (revisa Keyner). Commit de las correcciones: pendiente, se completa tras hacerlo |
+   | Commit / PR | `1e78223` (primer borrador) y `d881d2a` (correcciones), PR #9 (revisa Keyner) |
 
 ### Objetivo y contexto
 Producir los cuatro diagramas Mermaid de la Parte 5 (estados con reapertura, modelo de datos, secuencia del rechazo de solución y componentes) y una decisión tecnológica justificada, y guiar el flujo de Git y GitHub hasta abrir el Pull Request.
@@ -36,4 +36,4 @@ Segunda sesión (2026-10-12): mensaje con las correcciones de Juan, que comparó
 ### Corrección y verificación
 - Comparación de cada columna, restricción CHECK y trigger de `schema.sql` con el diagrama de datos, contra la rama `main` (commit `5ed6dda`).
 - Los cuatro `.png` se regeneraron desde su `.mmd` corregido, de modo que cada imagen muestra lo mismo que su fuente. Se retiró el `.mmd` duplicado y se corrigieron los nombres `*.png.png` y `4_componentes_1.mmd`.
-- Pendiente al momento de escribir esta bitácora: revisión escrita de Keyner en el PR #9 y su aprobación antes de fusionar; mi revisión escrita de S03, S04 y S05 en los PR #5, #6 y #8; confirmar el commit de correcciones.
+- Pendiente al momento de escribir esta bitácora: revisión escrita de Keyner en el PR #9 y su aprobación antes de fusionar; mi revisión escrita de S03, S04 y S05 en los PR #5, #6 y #8; - Revisión escrita de S03, S04 y S05 enviada en los PR #5, #6 y #8 (2026-10-12). el commit de correcciones.
