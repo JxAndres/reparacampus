@@ -2,7 +2,7 @@ import os
 
 from flask import Flask
 
-from app import asignaciones, atencion, auth, incidencias, validacion
+from app import asignaciones, atencion, auth, incidencias, solicitante, validacion
 
 
 def create_app(db_path=None):
@@ -16,5 +16,5 @@ def create_app(db_path=None):
     app.register_blueprint(asignaciones.bp)
     app.register_blueprint(atencion.bp)
     app.register_blueprint(validacion.bp)
+    app.register_blueprint(solicitante.bp)
     return app
-  
