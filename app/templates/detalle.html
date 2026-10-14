@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block contenido %}
+<p><a href="{{ url_for('consultas.listado') }}">&larr; Volver al listado</a></p>
+<h1>{{ i.codigo }}</h1>
+<ul>
+  <li>Estado: <strong>{{ i.estado }}</strong></li>
+  <li>Prioridad: <strong>{{ i.prioridad }}</strong></li>
+  <li>Ubicación: {{ i.ubicacion }}</li>
+  <li>Categoría: {{ i.categoria }}</li>
+  <li>Impacto: {{ i.impacto }}</li>
+  <li>Riesgo para personas: {{ 'Sí' if i.riesgo_personas else 'No' }}</li>
+  <li>Descripción: {{ i.descripcion }}</li>
+</ul>
+
+<h2>Historial</h2>
+<div style="overflow-x:auto;">
+<table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;">
+  <tr>
+    <th>Fecha (UTC)</th><th>Acción</th><th>Autor</th>
+    <th>Estado anterior</th><th>Estado nuevo</th><th>Detalle</th>
+  </tr>
+  {% for ev in historial %}
+  <tr>
+    <td>{{ ev.creado_en }}</td>
+    <td>{{ ev.accion }}</td>
+    <td>{{ ev.autor }}</td>
+    <td>{{ ev.estado_anterior or '—' }}</td>
+    <td>{{ ev.estado_nuevo }}</td>
+    <td>{{ ev.detalle or '' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+
+<h2>Soluciones registradas</h2>
+{% if not soluciones %}
+  <p>Aún no hay soluciones registradas.</p>
+{% else %}
+  <ul>
+    {% for s in soluciones %}
+      <li>{{ s.registrada_en }} · {{ s.tecnico }}: {{ s.texto }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}

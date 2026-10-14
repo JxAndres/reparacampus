@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1>Tablero del coordinador</h1>
+<p>Total de incidencias: <strong>{{ total }}</strong></p>
+
+<h2>Por estado</h2>
+<table border="1" cellpadding="6" style="border-collapse:collapse;">
+  <tr><th>Estado</th><th>Cantidad</th></tr>
+  {% for nombre, n in por_estado %}
+  <tr><td>{{ nombre }}</td><td>{{ n }}</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Por prioridad</h2>
+<table border="1" cellpadding="6" style="border-collapse:collapse;">
+  <tr><th>Prioridad</th><th>Cantidad</th></tr>
+  {% for nombre, n in por_prioridad %}
+  <tr><td>{{ nombre }}</td><td>{{ n }}</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Indicadores</h2>
+<table border="1" cellpadding="6" style="border-collapse:collapse;">
+  <tr><td>CRITICA no cerradas</td><td>{{ criticas_abiertas }}</td></tr>
+  <tr><td>Porcentaje de cierre</td><td>{{ porcentaje }}</td></tr>
+</table>
+{% endblock %}
