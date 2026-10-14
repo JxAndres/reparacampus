@@ -6,5 +6,7 @@
   <p><a href="{{ url_for('incidencias.nueva') }}">Registrar incidencia</a></p>
 {% elif g.user.rol == 'COORDINADOR' %}
   <p><a href="{{ url_for('asignaciones.pendientes') }}">Incidencias por asignar</a></p>
+{% elif g.user.rol == 'TECNICO' %}
+  <p><a href="{{ url_for('atencion.mis_asignaciones') }}">Mis incidencias asignadas</a></p>
 {% endif %}
 {% endblock %}
