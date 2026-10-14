@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1>Mis incidencias</h1>
+
+{% if ok %}
+  <p class="error" style="background:#e6f4ea;">{{ ok }}</p>
+{% endif %}
+{% for e in errores %}
+  <p class="error">{{ e }}</p>
+{% endfor %}
+
+{% if not propias %}
+  <p>No has registrado incidencias.</p>
+{% else %}
+<div style="overflow-x:auto;">
+<table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;">
+  <tr>
+    <th>Código</th><th>Ubicación</th><th>Categoría</th>
+    <th>Descripción</th><th>Estado</th><th>Solución del técnico</th><th>Acción</th>
+  </tr>
+  {% for p in propias %}
+  <tr>
+    <td>{{ p.codigo }}</td>
+    <td>{{ p.ubicacion }}</td>
+    <td>{{ p.categoria }}</td>
+    <td>{{ p.descripcion }}</td>
+    <td><strong>{{ p.estado }}</strong></td>
+    <td>{{ p.solucion if p.solucion else '—' }}</td>
+    <td>
+      {% if p.estado == 'PENDIENTE_VALIDACION' %}
+        <form method="post" action="{{ url_for('solicitante.confirmar', incidencia_id=p.id) }}">
+          <button type="submit">Confirmar solución</button>
+        </form>
+        <form method="post" action="{{ url_for('solicitante.rechazar', incidencia_id=p.id) }}">
+          <label for="rechazo-{{ p.id }}">Motivo del rechazo (10 a 300 caracteres)</label>
+          <textarea id="rechazo-{{ p.id }}" name="motivo" rows="3" style="width:100%;" required></textarea>
+          <button type="submit">Rechazar solución</button>
+        </form>
+      {% elif p.estado == 'CERRADA' %}
+        <form method="post" action="{{ url_for('solicitante.reabrir', incidencia_id=p.id) }}">
+          <label for="reapertura-{{ p.id }}">Motivo de la reapertura (10 a 300 caracteres; solo dentro de las 48 h siguientes al cierre)</label>
+          <textarea id="reapertura-{{ p.id }}" name="motivo" rows="3" style="width:100%;" required></textarea>
+          <button type="submit">Reabrir incidencia</button>
+        </form>
+      {% else %}
+        —
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{% endif %}
+{% endblock %}
