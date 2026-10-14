@@ -1,0 +1,8 @@
+stateDiagram-v2
+    [*] --> REGISTRADA: Solicitante registra (RF01)
+    REGISTRADA --> ASIGNADA: Coordinador asigna a técnico activo (RF02)
+    ASIGNADA --> EN_ATENCION: Técnico asignado inicia (RF03)
+    EN_ATENCION --> PENDIENTE_VALIDACION: Técnico asignado registra solución (RF03)
+    PENDIENTE_VALIDACION --> CERRADA: Solicitante dueño confirma (RF04)
+    PENDIENTE_VALIDACION --> EN_ATENCION: Dueño rechaza con motivo 10-300 (RF04)
+    CERRADA --> EN_ATENCION: Dueño reabre, máx. 48 h, motivo 10-300 (RF04)

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1>Mis incidencias asignadas</h1>
+
+{% if ok %}
+  <p class="error" style="background:#e6f4ea;">{{ ok }}</p>
+{% endif %}
+{% for e in errores %}
+  <p class="error">{{ e }}</p>
+{% endfor %}
+
+{% if not asignadas %}
+  <p>No tienes incidencias asignadas.</p>
+{% else %}
+<div style="overflow-x:auto;">
+<table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;">
+  <tr>
+    <th>Código</th><th>Ubicación</th><th>Categoría</th>
+    <th>Descripción</th><th>Estado</th><th>Acción</th>
+  </tr>
+  {% for a in asignadas %}
+  <tr>
+    <td>{{ a.codigo }}</td>
+    <td>{{ a.ubicacion }}</td>
+    <td>{{ a.categoria }}</td>
+    <td>{{ a.descripcion }}</td>
+    <td><strong>{{ a.estado }}</strong></td>
+    <td>
+      {% if a.estado == 'ASIGNADA' %}
+        <form method="post" action="{{ url_for('atencion.iniciar', incidencia_id=a.id) }}">
+          <button type="submit">Iniciar</button>
+        </form>
+      {% elif a.estado == 'EN_ATENCION' %}
+        <form method="post" action="{{ url_for('atencion.solucion', incidencia_id=a.id) }}">
+          <label for="solucion-{{ a.id }}">Solución (20 a 800 caracteres)</label>
+          <textarea id="solucion-{{ a.id }}" name="solucion" rows="4" style="width:100%;" required></textarea>
+          <button type="submit">Registrar solución</button>
+        </form>
+      {% else %}
+        —
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{% endif %}
+{% endblock %}

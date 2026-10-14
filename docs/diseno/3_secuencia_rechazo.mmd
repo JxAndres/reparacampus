@@ -1,0 +1,36 @@
+sequenceDiagram
+    actor S as Solicitante
+    participant R as Ruta Flask (@rol_requerido)
+    participant L as Función de negocio (mismo módulo)
+    participant D as SQLite
+
+    S->>R: POST /incidencias/{id}/rechazar (detalle = motivo)
+    R->>R: Leer usuario y rol de la sesión
+    alt Sin sesión
+        R-->>S: Redirige al login
+    else Rol distinto de SOLICITANTE
+        R-->>S: 403
+    end
+    R->>L: rechazar(conn, id, usuario, detalle, momento)
+    L->>D: Buscar incidencia
+    alt No existe
+        L-->>S: 404
+    else Usuario no es el dueño
+        L-->>S: 403
+    else Estado distinto de PENDIENTE_VALIDACION
+        L-->>S: 409
+    else Detalle fuera de 10-300 tras quitar espacios
+        L-->>S: 400 o 422
+    end
+    L->>D: BEGIN (with conn)
+    L->>D: UPDATE incidencia SET estado = EN_ATENCION
+    L->>D: INSERT evento RECHAZAR (autor, creado_en UTC, detalle, PENDIENTE_VALIDACION a EN_ATENCION)
+    alt Falla algún paso
+        L->>D: ROLLBACK
+        L-->>S: Error, sin cambios
+    else Todo correcto
+        L->>D: COMMIT
+        L-->>R: Nuevo estado
+        R-->>S: Éxito
+    end
+    Note over D: Se conservan técnico asignado y solución anterior
